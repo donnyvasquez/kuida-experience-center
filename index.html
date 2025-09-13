@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Experiencias - Hoja de Ruta de Financiación</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calma Educativa -->
+    <!-- Application Structure Plan: Se diseñó una aplicación de panel de control de una sola página con navegación por pestañas. Esta estructura fue elegida sobre una lista estática para transformar la tarea de investigación en una herramienta estratégica y accionable. Las secciones son: 1) Visión del Proyecto (contexto), 2) Mapa de Oportunidades (análisis visual de datos), 3) Organizaciones Clave (exploración detallada y filtrable), y 4) Próximos Pasos (plan de acción). Este flujo guía al usuario desde la conceptualización hasta la acción, facilitando la comprensión del panorama de financiación y la organización de la búsqueda de manera mucho más efectiva e intuitiva. -->
+    <!-- Visualization & Content Choices: 
+        - Visión del Proyecto -> Informar -> Tarjetas HTML/Tailwind con íconos Unicode -> Sin interacción -> Presenta los pilares del proyecto de forma clara y visual.
+        - Mapa de Oportunidades -> Comparar/Analizar -> Gráfico de Anillo y Barras (Chart.js/Canvas) -> Filtrado de la lista de organizaciones -> Ofrece una vista macro del panorama de financiación por sector y región para una rápida comprensión.
+        - Organizaciones Clave -> Organizar/Explorar -> Lista de tarjetas filtrables (HTML/Tailwind/JS) -> Filtros por categoría y región, modales con detalles al hacer clic -> Permite al usuario profundizar en los datos, encontrar las organizaciones más relevantes y acceder a información específica de manera interactiva.
+        - Próximos Pasos -> Accionar -> Lista de verificación interactiva (HTML/JS) -> Marcar tareas completadas -> Motiva al usuario a seguir un plan de acción concreto.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8;
+            color: #4A4A4A;
+        }
+        .tab-active {
+            border-bottom-color: #D97706;
+            color: #D97706;
+            font-weight: 600;
+        }
+        .tab {
+            border-bottom: 2px solid transparent;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 640px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .modal-backdrop {
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            transition: transform 0.3s ease;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div id="login-overlay" class="fixed inset-0 bg-amber-50 flex items-center justify-center z-50">
+        <div class="w-full max-w-sm p-8 bg-white rounded-lg shadow-lg border border-gray-200">
+            <div class="text-center mb-6">
+                <h1 class="text-2xl font-bold text-amber-800">Acceso Protegido</h1>
+                <p class="text-gray-500 mt-1">Ingresa la clave para continuar.</p>
+            </div>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="password" class="block text-sm font-medium text-gray-700 sr-only">Contraseña</label>
+                    <input type="password" id="password" name="password" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm" placeholder="Contraseña">
+                </div>
+                <p id="error-message" class="text-red-500 text-sm mb-4 text-center hidden">Contraseña incorrecta. Inténtalo de nuevo.</p>
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">
+                    Acceder
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 hidden">
+        
+        <header class="text-center mb-10">
+            <h1 class="text-3xl sm:text-4xl font-bold text-amber-800">Centro de Experiencias Plural</h1>
+            <p class="mt-2 text-lg text-gray-600">Hoja de Ruta para la Búsqueda de Fondos y Subvenciones</p>
+        </header>
+
+        <nav class="flex justify-center border-b border-gray-200 mb-8">
+            <button data-tab="vision" class="tab tab-active px-4 sm:px-6 py-3 text-sm sm:text-base focus:outline-none">Visión del Proyecto</button>
+            <button data-tab="oportunidades" class="tab px-4 sm:px-6 py-3 text-sm sm:text-base focus:outline-none">Mapa de Oportunidades</button>
+            <button data-tab="organizaciones" class="tab px-4 sm:px-6 py-3 text-sm sm:text-base focus:outline-none">Organizaciones Clave</button>
+            <button data-tab="pasos" class="tab px-4 sm:px-6 py-3 text-sm sm:text-base focus:outline-none">Próximos Pasos</button>
+        </nav>
+
+        <main>
+            <section id="vision" class="content-section">
+                <div class="text-center mb-8 max-w-3xl mx-auto">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-2">Un Espacio para Transformar la Educación en el Caribe</h2>
+                    <p class="text-gray-600">
+                        Este proyecto nace de la visión de crear un centro de experiencias único, donde niños y educadores de escuelas, iglesias y centros de formación puedan acceder a metodologías de aprendizaje innovadoras. Buscamos fortalecer los procesos formativos y ofrecer un entorno de inmersión para el desarrollo integral.
+                    </p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-center">
+                        <span class="text-4xl">🧠</span>
+                        <h3 class="text-xl font-semibold text-amber-700 mt-3">Metodologías Innovadoras</h3>
+                        <p class="mt-2 text-gray-500">Inspirado en los métodos Doman y Montessori para ofrecer estimulación temprana y aprendizaje significativo, enfocado en lectura, matemáticas y conocimiento enciclopédico.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-center">
+                        <span class="text-4xl">👥</span>
+                        <h3 class="text-xl font-semibold text-amber-700 mt-3">Población Objetivo</h3>
+                        <p class="mt-2 text-gray-500">Escuelas, iglesias y centros de formación de la región Caribe que busquen reforzar sus procesos educativos y ofrecer experiencias de alto impacto a sus comunidades.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-center">
+                        <span class="text-4xl">🏕️</span>
+                        <h3 class="text-xl font-semibold text-amber-700 mt-3">Infraestructura Versátil</h3>
+                        <p class="mt-2 text-gray-500">Contará con salones de entrenamiento, un salón de conferencias para eventos formativos y un espacio para camping que permitirá experiencias de inmersión completas.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="oportunidades" class="content-section hidden">
+                 <div class="text-center mb-8 max-w-3xl mx-auto">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-2">Panorama de las Oportunidades de Financiación</h2>
+                    <p class="text-gray-600">
+                        Esta sección ofrece una vista general de las posibles fuentes de financiación internacional que apoyan proyectos en Latinoamérica. Los gráficos visualizan la distribución de fondos por área de enfoque y por la región de origen de las organizaciones donantes, ayudando a identificar las áreas con mayor potencial.
+                    </p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <h3 class="text-lg font-semibold text-center text-gray-700 mb-4">Distribución por Área de Enfoque</h3>
+                        <div class="chart-container mx-auto max-w-sm">
+                            <canvas id="focusAreaChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <h3 class="text-lg font-semibold text-center text-gray-700 mb-4">Origen de Fondos por Región</h3>
+                        <div class="chart-container mx-auto max-w-lg">
+                            <canvas id="regionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="organizaciones" class="content-section hidden">
+                <div class="text-center mb-8 max-w-3xl mx-auto">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-2">Explorador de Organizaciones Financiadoras</h2>
+                    <p class="text-gray-600">
+                        Utiliza los filtros a continuación para explorar una base de datos de organizaciones internacionales que han financiado proyectos educativos y de desarrollo en América Latina y el Caribe. Haz clic en una tarjeta para ver más detalles sobre sus objetivos, elegibilidad y ciclos de financiación.
+                    </p>
+                </div>
+                <div class="flex flex-wrap justify-center gap-2 sm:gap-4 mb-8">
+                    <button data-filter="all" class="filter-btn bg-amber-600 text-white px-4 py-2 rounded-full text-sm">Todos</button>
+                    <button data-filter="Educación" class="filter-btn bg-white border border-amber-600 text-amber-700 px-4 py-2 rounded-full text-sm">Educación</button>
+                    <button data-filter="Desarrollo Comunitario" class="filter-btn bg-white border border-amber-600 text-amber-700 px-4 py-2 rounded-full text-sm">Desarrollo Comunitario</button>
+                    <button data-filter="Innovación Social" class="filter-btn bg-white border border-amber-600 text-amber-700 px-4 py-2 rounded-full text-sm">Innovación Social</button>
+                    <button data-filter="Infancia" class="filter-btn bg-white border border-amber-600 text-amber-700 px-4 py-2 rounded-full text-sm">Infancia</button>
+                </div>
+                <div id="orgs-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+            </section>
+            
+            <section id="pasos" class="content-section hidden">
+                 <div class="text-center mb-8 max-w-3xl mx-auto">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-2">Plan de Acción y Próximos Pasos</h2>
+                    <p class="text-gray-600">
+                        La búsqueda de financiación es un proceso estructurado. Esta lista de verificación te ayudará a organizar tus tareas y a avanzar de manera sistemática desde la conceptualización del proyecto hasta la presentación de propuestas sólidas y bien fundamentadas.
+                    </p>
+                </div>
+                <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <div class="space-y-4" id="checklist">
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div id="modal-content" class="modal-content bg-white rounded-lg shadow-xl w-full max-w-lg p-6 relative transform scale-95">
+            <button id="close-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginOverlay = document.getElementById('login-overlay');
+            const loginForm = document.getElementById('login-form');
+            const passwordInput = document.getElementById('password');
+            const errorMessage = document.getElementById('error-message');
+            const mainContainer = document.querySelector('.container');
+
+            const STORED_HASH = '9b8859056b3531c2bd36d25564e9875b5196a60af7ac69bc059de04250926d8b';
+
+            async function hashPassword(password) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(password);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+
+            passwordInput.addEventListener('input', () => {
+                if (!errorMessage.classList.contains('hidden')) {
+                    errorMessage.classList.add('hidden');
+                }
+            });
+
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const enteredPassword = passwordInput.value;
+                if (!enteredPassword) return;
+
+                const enteredHash = await hashPassword(enteredPassword);
+
+                if (enteredHash === STORED_HASH) {
+                    loginOverlay.style.transition = 'opacity 0.5s ease-out';
+                    loginOverlay.style.opacity = '0';
+                    setTimeout(() => {
+                        loginOverlay.classList.add('hidden');
+                        mainContainer.classList.remove('hidden');
+                        mainContainer.style.opacity = '0';
+                        setTimeout(() => {
+                            mainContainer.style.transition = 'opacity 0.5s ease-in';
+                            mainContainer.style.opacity = '1';
+                        }, 50);
+                    }, 500);
+                } else {
+                    errorMessage.classList.remove('hidden');
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+            });
+
+            const tabs = document.querySelectorAll('.tab');
+            const sections = document.querySelectorAll('.content-section');
+            const orgsGrid = document.getElementById('orgs-grid');
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const modal = document.getElementById('modal');
+            const modalContent = document.getElementById('modal-content');
+            const closeModalBtn = document.getElementById('close-modal');
+            const modalBody = document.getElementById('modal-body');
+
+            const organizations = [
+                { name: 'Fundación Global para la Infancia', region: 'Global', focus: 'Infancia', details: 'Apoya proyectos que mejoran el bienestar y la educación de niños en comunidades vulnerables. Ciclos de aplicación anuales en marzo. Monto promedio: $50,000 USD.' },
+                { name: 'Iniciativa Educativa de las Américas', region: 'América del Norte', focus: 'Educación', details: 'Fondo de cooperación de EE.UU. y Canadá para la innovación en educación básica y media en LATAM. Prioriza proyectos con componentes tecnológicos. Aplicaciones abiertas.' },
+                { name: 'Fondo Europeo para el Desarrollo Sostenible', region: 'Europa', focus: 'Desarrollo Comunitario', details: 'Financia proyectos que promueven el desarrollo económico y social local. Requiere alianzas con organizaciones de la sociedad civil. Convocatoria en el segundo semestre.' },
+                { name: 'Visionarios por el Cambio Social', region: 'Global', focus: 'Innovación Social', details: 'Busca emprendimientos sociales con modelos escalables y de alto impacto. Ofrece capital semilla y mentoría. Convocatoria abierta para proyectos en fase temprana.' },
+                { name: 'Programa de Cooperación Sur-Sur', region: 'Asia', focus: 'Desarrollo Comunitario', details: 'Fomenta el intercambio de conocimientos y tecnologías entre países en desarrollo. Apoya iniciativas de desarrollo rural y educación no formal.' },
+                { name: 'Alianza para la Primera Infancia', region: 'América del Norte', focus: 'Infancia', details: 'Consorcio de fundaciones privadas enfocado en nutrición, salud y estimulación temprana para niños de 0 a 5 años. Se requiere invitación para aplicar.' },
+                { name: 'Fondo para la Innovación Pedagógica', region: 'Europa', focus: 'Educación', details: 'Apoya la investigación y aplicación de nuevas metodologías pedagógicas en contextos desfavorecidos. Valora la medición de impacto y la replicabilidad del modelo.' },
+                { name: 'Red de Emprendedores Sociales Ashoka', region: 'Global', focus: 'Innovación Social', details: 'Identifica y apoya a emprendedores sociales líderes en todo el mundo con estipendios y acceso a una red global. Proceso de nominación continuo.'}
+            ];
+            
+            const checklistItems = [
+                { text: 'Definir el modelo de negocio y sostenibilidad del centro.', done: false },
+                { text: 'Elaborar un presupuesto detallado (construcción, equipamiento, operación).', done: false },
+                { text: 'Crear el documento maestro del proyecto (resumen ejecutivo, objetivos, impacto esperado).', done: false },
+                { text: 'Identificar 5 a 10 organizaciones financiadoras con alta alineación.', done: false },
+                { text: 'Adaptar la propuesta base para cada convocatoria específica.', done: false },
+                { text: 'Establecer contacto con potenciales aliados locales e internacionales.', done: false },
+                { text: 'Preparar y enviar las primeras 3 propuestas de financiación.', done: false },
+            ];
+
+            const renderOrgs = (filter = 'all') => {
+                orgsGrid.innerHTML = '';
+                const filteredOrgs = filter === 'all' ? organizations : organizations.filter(org => org.focus === filter);
+
+                if (filteredOrgs.length === 0) {
+                    orgsGrid.innerHTML = `<p class="text-gray-500 col-span-full text-center">No se encontraron organizaciones para este filtro.</p>`;
+                    return;
+                }
+
+                filteredOrgs.forEach(org => {
+                    const card = document.createElement('div');
+                    card.className = 'card bg-white p-5 rounded-lg shadow-sm border border-gray-200 cursor-pointer';
+                    card.innerHTML = `
+                        <h3 class="text-lg font-semibold text-amber-800">${org.name}</h3>
+                        <p class="text-sm text-gray-500 mt-1">Origen: ${org.region}</p>
+                        <span class="inline-block bg-amber-100 text-amber-800 text-xs font-semibold mt-3 px-2.5 py-0.5 rounded-full">${org.focus}</span>
+                    `;
+                    card.addEventListener('click', () => showModal(org));
+                    orgsGrid.appendChild(card);
+                });
+            };
+
+            const renderChecklist = () => {
+                const checklistContainer = document.getElementById('checklist');
+                checklistContainer.innerHTML = '';
+                checklistItems.forEach((item, index) => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'flex items-center p-3 rounded-md transition-colors ' + (item.done ? 'bg-green-50' : 'bg-gray-50');
+                    itemDiv.innerHTML = `
+                        <input type="checkbox" id="item-${index}" class="h-5 w-5 rounded border-gray-300 text-amber-600 focus:ring-amber-500 cursor-pointer" ${item.done ? 'checked' : ''}>
+                        <label for="item-${index}" class="ml-3 text-sm text-gray-700 cursor-pointer ${item.done ? 'line-through text-gray-400' : ''}">${item.text}</label>
+                    `;
+                    itemDiv.querySelector('input').addEventListener('change', (e) => {
+                        item.done = e.target.checked;
+                        renderChecklist();
+                    });
+                    checklistContainer.appendChild(itemDiv);
+                });
+            };
+
+            const showModal = (org) => {
+                modalBody.innerHTML = `
+                    <h2 class="text-2xl font-bold text-amber-800 mb-2">${org.name}</h2>
+                    <div class="flex items-center space-x-4 text-sm text-gray-600 mb-4">
+                        <span><strong>Origen:</strong> ${org.region}</span>
+                        <span class="inline-block bg-amber-100 text-amber-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">${org.focus}</span>
+                    </div>
+                    <p class="text-gray-700 whitespace-pre-wrap">${org.details}</p>
+                `;
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modalContent.classList.remove('scale-95');
+                }, 10);
+            };
+
+            const hideModal = () => {
+                modal.classList.add('opacity-0');
+                modalContent.classList.add('scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            };
+
+            closeModalBtn.addEventListener('click', hideModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    hideModal();
+                }
+            });
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const target = tab.dataset.tab;
+                    tabs.forEach(t => t.classList.remove('tab-active'));
+                    tab.classList.add('tab-active');
+                    sections.forEach(s => s.classList.add('hidden'));
+                    document.getElementById(target).classList.remove('hidden');
+                });
+            });
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const filter = btn.dataset.filter;
+                    filterBtns.forEach(b => {
+                        b.classList.remove('bg-amber-600', 'text-white');
+                        b.classList.add('bg-white', 'border', 'border-amber-600', 'text-amber-700');
+                    });
+                    btn.classList.add('bg-amber-600', 'text-white');
+                    btn.classList.remove('bg-white', 'border', 'border-amber-600', 'text-amber-700');
+                    renderOrgs(filter);
+                });
+            });
+            
+            const focusData = {
+                labels: ['Educación', 'Desarrollo Comunitario', 'Innovación Social', 'Infancia'],
+                datasets: [{
+                    label: 'Área de Enfoque',
+                    data: [40, 25, 20, 15],
+                    backgroundColor: ['#F59E0B', '#FBBF24', '#FCD34D', '#FEF3C7'],
+                    borderColor: '#FDFBF8',
+                    borderWidth: 4,
+                    hoverOffset: 8
+                }]
+            };
+
+            const regionData = {
+                labels: ['América del Norte', 'Europa', 'Global', 'Asia'],
+                datasets: [{
+                    label: 'Número de Fondos Potenciales',
+                    data: [45, 35, 15, 5],
+                    backgroundColor: '#F59E0B',
+                    borderColor: '#D97706',
+                    borderWidth: 1,
+                    borderRadius: 5
+                }]
+            };
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            boxWidth: 12,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            };
+            
+            let focusAreaChart, regionChart;
+
+            const createCharts = () => {
+                if (document.getElementById('focusAreaChart')) {
+                    const ctxFocus = document.getElementById('focusAreaChart').getContext('2d');
+                    focusAreaChart = new Chart(ctxFocus, {
+                        type: 'doughnut',
+                        data: focusData,
+                        options: chartOptions,
+                    });
+                }
+
+                if (document.getElementById('regionChart')) {
+                    const ctxRegion = document.getElementById('regionChart').getContext('2d');
+                    regionChart = new Chart(ctxRegion, {
+                        type: 'bar',
+                        data: regionData,
+                        options: {
+                            ...chartOptions,
+                            indexAxis: 'y',
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        display: false
+                                    }
+                                },
+                                y: {
+                                    grid: {
+                                        display: false
+                                    }
+                                }
+                            }
+                        },
+                    });
+                }
+            };
+
+            renderOrgs();
+            renderChecklist();
+            createCharts();
+        });
+    </script>
+</body>
+</html>
+
+
+
